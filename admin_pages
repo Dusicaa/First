@@ -1,0 +1,468 @@
+<form action="admin.php?table=picture" method="POST" enctype="multipart/form-data">
+    <?php
+
+    echo "<table  style='text-align:center'>";
+    echo "<tr><td align='left'>Name:</td>
+		           <td align='left'><input type='text' name='nameP'></td></tr>
+		      <tr> <td align='left'>Alt:</td>
+				   <td align='left'><textarea rows='3' cols='22' name='alt' ></textarea></td></tr>
+			  <tr>  <td align='left'>Picture</td>
+				   <td><input type='file' name='fSlika'  /></td>
+			</tr>";
+
+    echo "<tr><td colspan='2' align='center'><input type='submit' value='Add picture'  name='unesi'></td></tr>";
+    echo "</table>";
+
+
+
+    ?>
+</form>
+<?php
+
+if(isset($_REQUEST['unesi'])){
+
+    $name=$_REQUEST['nameP'];
+
+    $alt=$_REQUEST['alt'];
+
+    $fname = $_FILES['fSlika']['name'];
+    $ftmp = $_FILES['fSlika']['tmp_name'];
+    $fsize = $_FILES['fSlika']['size'];
+    $ftype = $_FILES['fSlika']['type'];
+    $putanjaF="images/buy/";
+    $pF=$putanjaF.$fname;
+
+    $greske=array();
+    if(empty($name)){$greske[] = "add title!";}
+    if(empty($alt)){$greske[] = "enter alt!";}
+
+    if(count($greske) == 0)
+    {
+        include("conection.php");
+        if($ftype=="image/jpg" || $ftype=="image/jpeg")
+        {
+            if( move_uploaded_file($ftmp,$pF))
+            {
+                $upit="INSERT INTO picture VALUES('','$name','$pf','$alt')";
+                $rez3=mysqli_query($conn,$upit);
+                if($rez3){echo "Successfully added picture :)";}
+                else{echo "error :P";}
+            }
+            else
+            {echo "error :P";}
+
+        }
+        else
+        {echo "Support JPG ili JPEG format picture :P";}
+    }
+    else
+    {
+        foreach ($greske as $greska){
+            echo $greska."<br/>";
+        }
+
+    }
+}?>
+<?php
+include('conection.php');
+if(isset($_REQUEST['btnEdit'])){
+
+    $editID=$_REQUEST['edit_id'];
+    $question=$_POST['tbquestion'];
+    $active=$_POST['tbactive'];
+    $upitD="update poll set question=$question, active=$active where poll.id=".$editID;
+    $rezD=mysqli_query($conn,$upitD);
+    if($rezD){
+        echo'<table><tr> ';
+
+        $upit22="select * from poll";
+        $rez2=mysqli_query($conn,$upit22);
+        while($red2=mysqli_fetch_array($rez2)){
+
+            echo' 
+	 <td> '.$red2['question'].'</td>
+	 <td> '.$red2['active'].'</td>';
+        }
+        echo'</tr>';
+    }}
+
+if(isset($_POST['delete'])){
+
+    $deleteID=$_POST['chbDelete'];
+    foreach($deleteID as $id)
+    {
+        $upit_br = "DELETE FROM poll WHERE id=".$id;
+        mysqli_query($conn,$upit_br)or die("greska u upitu".mysqli_error());
+    }
+
+}
+
+
+?>
+<form method="post">
+    <table>
+        <tr>
+            <th>Question:</th>
+            <th>Active:</th>
+            <th>Edit:</th>
+            <th>Delete:</th>
+        </tr>
+        <?php
+        include('conection.php');
+        $upit="select * from poll";
+        $rez=mysqli_query($conn,$upit);
+        while($red=mysqli_fetch_array($rez)){
+            ?>
+            <tr>
+                <td><input type="text" name="tbquestion" value="<?php echo $red['question'];?>"></td>
+                <td><input type="text" name="tbactive" value="<?php echo $red['active'];?>"></td>
+                <td><button type="submit" name="btnEdit" value="<?php echo $red['id'];?>">Edit</button>
+                    <input type="hidden" name="edit_id" value="<?php echo $red['id'];?>">
+                </td>
+                <td><input type="checkbox" name="chbDelete[]" value="<?php echo $red['id'];?>">
+                </td>
+            </tr>
+
+        <?php }?>
+        <tr>
+            <td></td> <td></td><td></td>
+
+            <td><input type="submit" name="delete" value="DELETE"></td>
+        </tr>
+    </table>
+</form>
+<?php
+
+include ("conection.php");
+
+$upit = "SELECT * FROM users";
+$rezultat = mysqli_query($conn,$upit);
+mysqli_close($conn);
+echo("<div class='tableusers'>");
+echo("<table border='2.75' width='100%'><form>");
+echo ("</td></tr>");
+echo("<tr>
+<td>Username</td>
+<td>Email</td>
+<td>Role</td>
+<td hidden>db_id</td>
+<td>Manage</td>
+<td>Delete</td>
+</tr>");
+
+while($red = mysqli_fetch_array($rezultat)){
+    $iduser = $red['id'];
+    $username = $red['username'];
+    $email = $red['email'];
+    $usermod = $red['id_role'];
+    $password = $red['password'];
+    if($usermod=='1'){
+        $usermod="admin";
+    }else{
+        $usermod="user";
+    }
+
+    echo("<tr>
+<td width='46'>$username</td>
+<td>$email</td>
+<td>$usermod</td>
+<td hidden>$iduser</td>
+<td><a href='admin.php?table=users&id=$iduser'>&#9997;</a></td>
+<td><a href='admin.php?table=users&delete=$iduser'>&#10006;</a></td>
+</tr>");
+}
+echo("</table></form>");
+echo("</div>");
+/*brisanje korisnika*/
+if(isset($_REQUEST['delete'])){
+    $upit2 = "DELETE FROM users WHERE id='".$_REQUEST['delete']."'";
+    include("conection.php");
+    $rezultat2 = mysqli_query($conn,$upit2)or die("error with delete users".mysqli_error());
+    mysqli_close($conn);
+}
+/*editovanje korisnika*/
+if (isset($_GET['id'])) {
+
+    $id1 = $_GET['id'];
+    $username1 = $_GET['username'];
+    $email1 = $_GET['email'];
+    $password1 = $_GET['password'];
+    $id_role1 = $_GET['id_role'];
+    include("conection.php");
+    $query = "SELECT * FROM users WHERE id=".$id1;
+    $run = mysqli_query($conn,$query)or die("error with select users".mysqli_error());
+    $red=mysqli_fetch_array($run);
+    ?>
+
+    <form method="GET" action="<?php echo $_SERVER['PHP_SELF'];?>">
+        <input type="text" name="id" value="<?php echo $red['id']; ?>" />
+        <input type="text" name="username" value="<?php echo $red['username']; ?>" />
+        <input type="text" name="email" value="<?php echo $red['email']; ?>" />
+        <input type="text" name="password" value="<?php echo $red['password']; ?>" />
+        <input type="text" name="id_role" value="<?php echo $red['id_role']; ?>" />
+        <input type="submit" name="submit" />
+
+    </form>
+
+    <?php
+    if(isset($_REQUEST['submit'])){
+        $sql = "UPDATE users SET id=".$id1.",username=".$username1.",email=".$email1.",
+        password=".$password1.",id_role=".$id_role1."
+        WHERE id=".$id1;
+
+        if (mysqli_query($conn, $sql)) {
+            echo "success updating record: ";
+            //header("location: admin.php");
+        } else {
+            echo "Error updating record: " . mysqli_error($conn);
+        }
+    }
+    mysqli_close($conn);
+
+}
+
+echo ("<div class='adduser save2'><a href='admin.php?table=users&add='>Add new user</a></div>");
+?>
+<form method="post" action="<?php echo $_SERVER['php_self'];?>" >
+    <table border=2 class='table table-striped'>
+        <tr>
+            <th>ime</th>
+            <th>link</th>
+            <th>roditelj</th>
+            <th>obrisi</th>
+            <th>izmeni</th>
+        </tr>
+        <?php
+        include('conection.php');
+        /*brisanje menija*/
+        if(isset($_REQUEST['btnBrisiMeni']))
+        {
+
+            $za_brisanje = $_REQUEST['zabrisanje'];
+            $upit_br = "DELETE FROM menu WHERE idMenu=".$za_brisanje;
+            $delete=mysqli_query($conn,$upit_br)or die("greska u upitu".mysqli_error());
+            if($delete){
+                echo"<script>window.open('admin.php','_self');</script>";
+            }
+        }
+        /*izmena menija*/
+        if(isset($_POST['btnEdit']))
+        {
+            $zaEditovanje=$_POST['zaeditovanje'];
+            $naziv1=$_POST['ime'];
+            $putanja1=$_POST['link'];
+            $roditelj1=$_POST['roditelj'];
+
+            if($naziv1==''||$putanja1==''||$roditelj1==''){
+                echo"<script>alert('nesto nije dobro');</script>";
+                exit();}
+            else{
+                $updateMeni="UPDATE menu SET ime='$naziv1',link='$putanja1',roditelj='$roditelj1' where idMenu=".$zaEditovanje;
+
+                if(mysqli_query($conn,$updateMeni)){
+                    echo"<script>alert('Uspesno je izmenjen podatak');</script>";
+                    echo"<script>window.open('admin.php','_self');</script>";
+                    exit();
+                }}
+        }
+
+
+        /*prikaz menija*/
+        $rezMenu=mysqli_query($conn,"select * from menu");
+        while($redmenu=mysqli_fetch_array($rezMenu)){
+
+            echo '<tr>
+	<td><input type="text" name="ime" value="'.$redmenu['ime'].'"/></td>
+	<td><input type="text" name="link" value="'.$redmenu['link'].'"/></td>
+	<td><input type="text" name="roditelj" value="'.$redmenu['roditelj'].'"/></td>
+	<td>
+	<input type="hidden" name="zabrisanje" value='.$redmenu['idMenu'].'>
+	<input type="submit" name="btnBrisiMeni" value="Obrisi" onclick="alertDelete()"></td>
+	<input type="hidden" name="zaeditovanje" value='.$redmenu['idMenu'].'>
+	<td><button type="submit"  name="btnEdit">Izmeni</button></td>';
+        } echo "</tr>";
+        echo '<tr align="center" ><td colspan=5><button type="submit" name="addMenu">Add Menu</button></td>
+</tr>';
+        /*dodavanje menija*/
+
+        ?>
+
+
+    </table>
+</form>
+
+<form action="admin.php?table=news" method="POST" >
+    <?php
+
+    echo "<table  style='text-align:center'>";
+    echo "<tr><td align='left'>Title</td>
+		           <td align='left'><input type='text' name='tbTitleNews'></td></tr>
+		      <tr> <td align='left'>Text</td>
+				   <td align='left'><textarea rows='3' cols='22' name='txtTextNews' ></textarea></td></tr>		
+			</tr>";
+    echo "<tr><td colspan='2' align='center'><input type='submit' value='Add news' class='button' name='addNews'></td></tr>";
+    echo "</table>";
+
+    ?>
+</form>
+<span id="rezultatUnosaVesti">
+			<?php
+            /*dodavanje vesti*/
+            if(isset($_REQUEST['addNews'])){
+
+                $nazivVesti=$_REQUEST['tbTitleNews'];
+                $vest=$_REQUEST['txtTextNews'];
+
+                include('conection.php');
+
+                $upit="INSERT INTO news(title,text) VALUES('".$nazivVesti."','".$vest."')";
+                $rez3=mysqli_query($conn,$upit);
+                if($rez3){echo "Successfully added news.";}
+                else{echo "Error while adding news";}
+
+            }   	/*kraj dodavanje vesti*/?>
+		</span>
+
+
+<?php
+include('conection.php');
+if(isset($_REQUEST['btnBrisi']))
+{
+    $za_brisanje = $_REQUEST['brisanje'];
+
+    foreach($za_brisanje as $id)
+    {
+        $upit_br = "DELETE FROM news WHERE id=".$id;
+        mysqli_query($conn,$upit_br)or die("greska u upitu".mysqli_error());
+    }
+}
+$upit = "SELECT *
+	FROM news ORDER BY date_created";
+
+$rez = mysqli_query($conn,$upit);
+
+if(mysqli_num_rows($rez) == 0)
+{
+    echo "Trenutno nema zapisa u bazi !";
+}
+else
+{
+?>
+<form method="post" action="admin.php?table=news">
+
+    <table border='1'style="margin:auto;margin:30px auto;" >
+        <tr>
+            <th>Naziv </th>
+            <th>Vest</th>
+        </tr>
+        <?php
+
+        while($r = mysqli_fetch_array($rez))
+        {
+            echo "<tr>      
+		<td>".$r['title']."</td>
+		<td>".$r['text']."</td>		
+		<td><input type='checkbox' name='brisanje[]' value='".$r['id']."'></td>			
+	  </tr>";
+        }
+        echo "<tr>
+		<td colspan='4' align ='center'>	
+			<input type='submit' name='btnBrisi' value='Delete'/>	
+		</td>
+	  </tr>
+	 </table>
+	</form>";
+        }
+        ?>
+        <!--prikaz vesti za izmenu-->
+        <form method="post" action="admin.php?table=news&edit=<?php echo $id;?>">
+            <table border='1' style="margin:20px auto ">
+                <tr>
+                    <th>Title news</th>
+                    <th>Text news</th>
+                </tr>
+                <?php
+
+                include('conection.php');
+                $upit = "SELECT *
+	FROM news ORDER BY id";
+
+                $run=mysqli_query($conn,$upit)or die("greska".mysqli_error());
+                while($red=mysqli_fetch_array($run)){
+                $id=$red['id'];
+                $title=$red['title'];
+                $news=$red['text'];
+                ?>
+
+                <tr>
+                    <td><?php echo $title?></td>
+                    <td><?php echo $news?></td>
+                    <td><button type="submit" name="btnedit" value="<?php echo $id?>">Edit</button></td>
+                    <?php }
+                    mysqli_close($conn);
+                    ?>  	</tr>
+
+            </table>
+        </form>
+
+        <!--prikaz vesti za izmenu kraj-->
+
+
+        <?php
+        include("conection.php");
+
+        if(isset($_POST['btnedit'])){
+            $edit_id=$_POST['btnedit'];
+            $upit="SELECT * FROM news WHERE id=".$edit_id;
+            $run=mysqli_query($conn,$upit);
+            $red=mysqli_fetch_array($run);
+            $id=$red['id'];
+            $post=$red['text'];
+            $nazivPosta=$red['title'];
+            ?>
+            <form action="admin.php?table=news&edit=<?php echo $id;?>" method='post' >
+                <table border='1' align="center"  style="margin:20px auto;">
+                    <tr>
+                        <td colspan="2"align="center" ><h2>Edit</h2></td>
+                    </tr>
+                    <tr>
+                        <td>News:</td>
+                        <td><input type='text' name='post'value="<?php echo $post?>"/></td>
+                    </tr>
+
+                    <tr>
+                        <td>Title of news:</td>
+                        <td><input type='text' name='nazivPosta' value="<?php echo $nazivPosta?>"/></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"align="center" >
+                            <input type='hidden' name='update_id' value='<?php echo $id ?>'/>
+                            <input type='submit' name='update' value='promeni'/></td>
+                    </tr>
+                </table>
+            </form>
+        <?php }
+
+        include("conection.php");
+        if (isset($_POST['update']))
+        {
+            $update_id=$_GET['edit'];
+            $post1=$_POST['post'];
+            $nazivPosta=$_POST['nazivPosta'];
+            if($post1==''||$nazivPosta1==''){
+                echo"<script>alert('nesto nije dobro');</script>";
+                exit();
+            }
+            else
+            {
+                $upit_update="UPDATE news SET text='$post1',  title='$nazivPosta1' where id=".$update_id;
+                if(mysqli_query($conn,$upit_update)){
+                    echo"<script>alert('Uspesno je izmenjen podatak');</script>";
+                    echo"<script>window.open('admin.php','_self');</script>";
+                    exit();
+                }
+            }
+        }
+        mysqli_close($conn);
+        ?>
+		  
